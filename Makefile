@@ -3,10 +3,6 @@ ifeq ($(PRJ_NAME),)
     $(error PRJ_NAME must be defined)
 endif
 
-ifeq ($(PRJ_BRANCH),)
-    $(error PRJ_BRANCH must be defined)
-endif
-
 ####################### files #########################
 
 SRCDIR := src
@@ -50,7 +46,11 @@ ifeq ($(PRJ_TYPE),lib)
     LIB_NAME     := lib$(PRJ_NAME)-$(PRJ_BRANCH).so
     TARGET       := $(LIBDIR)/$(LIB_NAME)
     LINK_OPTIONS += -shared -Wl,--no-undefined -Wl,-soname,$(LIB_NAME)
+    ifeq ($(PRJ_BRANCH),)
+        $(error PRJ_BRANCH must be defined for libraries)
+    endif
 endif
+
 ifeq ($(PRJ_TYPE),exe)
     EXE_NAME     := $(PRJ_NAME)
     TARGET       := $(BINDIR)/$(EXE_NAME)
@@ -84,18 +84,20 @@ V=@
 
 all: $(TARGET)
 
+debug release:
+	$(SUBMAKE) BUILD_MODE=$@
 
 $(TARGET): $(OBJ_FILES) $(TARGET_EXTRA_DEPENDENCY)
-	$(V)if test ! -d $(@D); then mkdir -p $(@D); fi
+	$(V)mkdir -p $(@D)
 	$(V)echo "  linking $@"
 	$(V)$(COMPILER) $(CPP_OPTIM) $(LINK_OPTIONS) $(CPP_PLT) -g -o $@  $(OBJ_FILES)
 
 $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(CPPEXT)
 	$(V)echo "  compiling $<"
-	$(V)if test ! -d $(dir $(DEPDIR)/$*); then mkdir -p $(dir $(DEPDIR)/$*); fi
+	$(V)mkdir -p $(dir $(DEPDIR)/$*)
 	$(V)$(COMPILER) $(CPP_OPTIONS) -MT $@ -MM -MP -MF $(DEPDIR)/$*.$(DEPEXT) $<
 	$(V)sed "s%$@:%$@ $(DEPDIR)/$*.$(DEPEXT):%g" -i $(DEPDIR)/$*.$(DEPEXT)
-	$(V)if test ! -d $(@D)  ; then mkdir -p $(@D); fi
+	$(V)mkdir -p $(@D)
 	$(V)$(COMPILER) $(CPP_OPTIONS) -c -o $@  $<
 
 $(DEPDIR)/$(TESTDIR)/Test$*.$(DEPEXT): $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT)
@@ -110,7 +112,7 @@ $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): TEST_CPP_EXTRA_FILES = $(wildcard $(SRCDI
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): TEST_OBJ_EXTRA_FILES = $(TEST_CPP_EXTRA_FILES:$(SRCDIR)/%.$(CPPEXT)=$(OBJDIR)/%.$(OBJEXT))
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): 
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT):
-	$(V)if test ! -d $(@D); then mkdir -p $(@D); fi
+	$(V)mkdir -p $(@D)
 	$(V)echo "  linking $@"
 	$(V)$(COMPILER) $(CPP_OPTIM) $(CPP_PLT) -g -o $@  $< $(TEST_OBJ_EXTRA_FILES) -L$(LIBDIR) -l$(PRJ_NAME)-$(PRJ_BRANCH) $(TEST_EXTRA_LINK_LIBS)
 
@@ -134,7 +136,16 @@ $(foreach n,$(TEST_NAMES),$(eval $(call testdeps,$(n))))
 
 endif
 
-.PHONY: check
+.PHONY: check go
+
+go: $(TARGET)
+	$(V)export LD_LIBRARY_PATH=$(LD_PATH):$$LD_LIBRARY_PATH; ./$< $(ARGS)
+
+gdb-%:
+	$(SUBMAKE) BUILD_MODE=$* gdb
+	
+gdb: $(TARGET)
+	$(V)export LD_LIBRARY_PATH=$(LD_PATH):$$LD_LIBRARY_PATH; gdb ./$<
 
 check: $(TEST_INDICATORS)
 
