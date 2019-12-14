@@ -63,8 +63,6 @@ endif
 
 SUBMAKE = $(V)$(MAKE) -s --no-print-directory
 
-.PHONY: check $(TEST_RUNS)
-
 ####################### c++ #########################
 
 COMPILER  := c++
@@ -78,7 +76,7 @@ endif
 
 CPP_PLT      := -fno-plt
 CPP_INCLUDES += -I$(SRCDIR)
-CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) -fPIC $(CPP_PLT) -g $(CPP_INCLUDES) $(CPP_DEFINES)
+CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) -fPIC $(CPP_PLT) -g $(CPP_INCLUDES) $(CPP_DEFINES) $(CPP_EXTRA_FLAGS)
 
 V=@
 
@@ -123,10 +121,10 @@ $(BINDIR)/$(TESTDIR)/Test%.$(TESTIND): $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 	$(V)touch $@
 
 test-%: $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
-	export LD_LIBRARY_PATH=$(LIBDIR):$$LD_LIBRARY_PATH; ./$< $(TEST_ARGS_$*)
+	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; ./$< $(TEST_ARGS_$*)
 
 gdb-test-%: $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
-	export LD_LIBRARY_PATH=$(LIBDIR):$$LD_LIBRARY_PATH; gdb ./$<
+	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; gdb ./$<
 
 ifneq ($(TEST_DEP_FILES),)
 
@@ -136,14 +134,19 @@ $(foreach n,$(TEST_NAMES),$(eval $(call testdeps,$(n))))
 
 endif
 
+.PHONY: check
+
 check: $(TEST_INDICATORS)
 
-recheck: clean-tests
+recheck: clean-test-indicators
 	$(SUBMAKE) check
 
-clean-tests:
+clean-test-indicators:
 	$(V)rm -f $(TEST_INDICATORS)
-	
+
+clean-tests:
+	$(V)rm -rf $(BINDIR)/$(TESTDIR) $(OBJDIR)/$(TESTDIR) $(DEPDIR)/$(TESTDIR)
+
 clean:
 	$(V)rm -rf $(BUILDDIR)
 
