@@ -43,12 +43,13 @@ $(foreach n,$(TEST_NAMES),$(eval TEST_EXTRA_OBJS_$(n):=$(patsubst $(SRCDIR)/$(TE
 
 TARGET :=
 ifeq ($(PRJ_TYPE),lib)
-    LIB_NAME     := lib$(PRJ_NAME)-$(PRJ_BRANCH).so
-    TARGET       := $(LIBDIR)/$(LIB_NAME)
-    LINK_OPTIONS += -shared -Wl,--no-undefined -Wl,-soname,$(LIB_NAME)
     ifeq ($(PRJ_BRANCH),)
         $(error PRJ_BRANCH must be defined for libraries)
     endif
+    LIB_NAME     := lib$(PRJ_NAME)-$(PRJ_BRANCH).so
+    TARGET       := $(LIBDIR)/$(LIB_NAME)
+    LINK_OPTIONS += -shared -Wl,--no-undefined -Wl,-soname,$(LIB_NAME)
+    LINK_MY_LIB  := -L$(LIBDIR) -l$(PRJ_NAME)-$(PRJ_BRANCH)
 endif
 
 ifeq ($(PRJ_TYPE),exe)
@@ -90,7 +91,7 @@ debug release:
 $(TARGET): $(OBJ_FILES) $(TARGET_EXTRA_DEPENDENCY)
 	$(V)mkdir -p $(@D)
 	$(V)echo "  linking $@"
-	$(V)$(COMPILER) $(CPP_OPTIM) $(LINK_OPTIONS) $(CPP_PLT) -g -o $@  $(OBJ_FILES)
+	$(V)$(COMPILER) $(CPP_OPTIM) $(LINK_OPTIONS) $(CPP_PLT) -g -o $@  $(OBJ_FILES) $(LINK_EXTRA_LIBS)
 
 $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(CPPEXT)
 	$(V)echo "  compiling $<"
@@ -114,7 +115,7 @@ $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT):
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT):
 	$(V)mkdir -p $(@D)
 	$(V)echo "  linking $@"
-	$(V)$(COMPILER) $(CPP_OPTIM) $(CPP_PLT) -g -o $@  $< $(TEST_OBJ_EXTRA_FILES) -L$(LIBDIR) -l$(PRJ_NAME)-$(PRJ_BRANCH) $(TEST_EXTRA_LINK_LIBS)
+	$(V)$(COMPILER) $(CPP_OPTIM) $(CPP_PLT) -g -o $@  $< $(TEST_OBJ_EXTRA_FILES) $(LINK_MY_LIB) $(TEST_EXTRA_LINK_LIBS)
 
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTIND): $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 	$(V)echo; echo; echo "########################### testing $* ###########################"
