@@ -70,7 +70,7 @@ COMPILER  := c++
 CPP_STD   ?= -std=c++17
 
 ifeq ($(BUILD_MODE),release)
-    CPP_OPTIM := -O2 -DNDEBUG
+    CPP_OPTIM := -O3 -DNDEBUG
 else
     CPP_OPTIM := -O0
 endif
@@ -156,10 +156,10 @@ recheck: clean-test-indicators
 clean-test-indicators:
 	$(V)rm -f $(TEST_INDICATORS)
 
-clean-tests:
+clean-tests::
 	$(V)rm -rf $(BINDIR)/$(TESTDIR) $(OBJDIR)/$(TESTDIR) $(DEPDIR)/$(TESTDIR)
 
-clean:
+clean::
 	$(V)rm -rf $(BUILDDIR)
 
 -include $(DEP_FILES)
