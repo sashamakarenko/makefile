@@ -50,6 +50,10 @@ ifeq ($(PRJ_TYPE),lib)
     TARGET       := $(LIBDIR)/$(LIB_NAME)
     LINK_OPTIONS += -shared -Wl,--no-undefined -Wl,-soname,$(LIB_NAME)
     LINK_MY_LIB  := -L$(LIBDIR) -l$(PRJ_NAME)-$(PRJ_BRANCH)
+    SRC_GDB_PRINTER := $(wildcard $(SRCDIR)/gdb/printers.py)
+    ifneq ($(SRC_GDB_PRINTER),)
+	GDB_PRINTER  := $(TARGET)-gdb.py
+    endif
 endif
 
 ifeq ($(PRJ_TYPE),exe)
@@ -88,10 +92,19 @@ all: $(TARGET)
 debug release:
 	$(SUBMAKE) BUILD_MODE=$@
 
-$(TARGET): $(OBJ_FILES) $(TARGET_EXTRA_DEPENDENCY)
+$(TARGET): $(OBJ_FILES) $(TARGET_EXTRA_DEPENDENCY) $(GDB_PRINTER)
 	$(V)mkdir -p $(@D)
 	$(V)echo "  linking $@"
 	$(V)$(COMPILER) $(CPP_OPTIM) $(LINK_OPTIONS) $(CPP_PLT) -g -o $@  $(OBJ_FILES) $(LINK_EXTRA_LIBS)
+
+
+ifneq ($(SRC_GDB_PRINTER),)
+$(GDB_PRINTER): $(SRC_GDB_PRINTER)
+	$(V)mkdir -p $(@D)
+	$(V)echo "  making $@"
+	$(V)cp -f $< $@
+	$(V)sed -e "s/__PRJ_NAME__/$(PRJ_NAME)/g" -e "s/__PRJ_BRANCH__/$(PRJ_BRANCH)/g" -i $@
+endif
 
 $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(CPPEXT)
 	$(V)echo "  compiling $<"
@@ -99,7 +112,7 @@ $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(CPPEXT)
 	$(V)$(COMPILER) $(CPP_OPTIONS) -MT $@ -MM -MP -MF $(DEPDIR)/$*.$(DEPEXT) $<
 	$(V)sed "s%$@:%$@ $(DEPDIR)/$*.$(DEPEXT):%g" -i $(DEPDIR)/$*.$(DEPEXT)
 	$(V)mkdir -p $(@D)
-	$(V)$(COMPILER) $(CPP_OPTIONS) -c -o $@  $<
+	$(V)$(COMPILER) $(CPP_OPTIONS) -c -o $@  $$PWD/$<
 
 $(DEPDIR)/$(TESTDIR)/Test$*.$(DEPEXT): $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT)
 	
@@ -119,7 +132,7 @@ $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT):
 
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTIND): $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 	$(V)echo; echo; echo "########################### testing $* ###########################"
-	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; ./$< $(TEST_ARGS_$*)
+	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; $(TEST_LAUNCHER) ./$< $(TEST_ARGS_$*)
 	$(V)echo; echo; echo "########################### end of test $* ###########################"; echo; echo
 	$(V)touch $@
 
