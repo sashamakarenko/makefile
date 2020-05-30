@@ -21,9 +21,12 @@ LIBDIR := $(BUILDDIR)/lib/$(BUILD_MODE)
 BINDIR := $(BUILDDIR)/bin/$(BUILD_MODE)
 
 CPP_FILES := $(wildcard $(SRCDIR)/$(PRJ_NAME)/*.$(CPPEXT))
+ifneq ($(SRCSUBDIRS),)
+    CPP_FILES := $(CPP_FILES) $(foreach dir,$(SRCSUBDIRS),$(wildcard $(SRCDIR)/$(PRJ_NAME)/$(dir)/*.$(CPPEXT)))
+endif
+
 OBJ_FILES := $(CPP_FILES:$(SRCDIR)/%.$(CPPEXT)=$(OBJDIR)/%.$(OBJEXT))
 DEP_FILES := $(CPP_FILES:$(SRCDIR)/%.$(CPPEXT)=$(DEPDIR)/%.$(DEPEXT))
-
 
 TESTDIR := tests
 TEST_CPP_FILES    := $(wildcard $(SRCDIR)/$(TESTDIR)/Test*.$(CPPEXT))
