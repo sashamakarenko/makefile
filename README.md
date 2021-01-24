@@ -41,8 +41,12 @@ Put your code into src/projectname
  |         |    +___ MyCode.cpp
  |         |
  |         +___ tests
+ |         |    |
+ |         |    +___ TestMyCode.cpp
+ |         |
+ |         +___ gdb
  |              |
- |              +___ TestMyCode.cpp
+ |              +___ printers.py
  |
  +___ prj2
  |
