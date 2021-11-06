@@ -40,6 +40,7 @@ TEST_INDICATORS:= $(TEST_TARGETS:%.$(TESTEXT)=%.$(TESTIND))
 TEST_NAMES     := $(TEST_TARGETS:$(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)=%)
 
 testdeps = $(BINDIR)/$(TESTDIR)/Test$(1).$(TESTEXT): $(OBJDIR)/$(TESTDIR)/Test$(1).$(OBJEXT) $(TEST_EXTRA_OBJS_$(1)) $(TARGET) $(TEST_EXTRA_DEPENDENCY)
+testextradeps = $(OBJDIR)/$(TESTDIR)/Test$(1).$(OBJEXT): $(Test$(1)_EXTRA_DEPENDENCY)
 
 $(foreach n,$(TEST_NAMES),$(eval TEST_EXTRA_CPPS_$(n):=$(wildcard $(SRCDIR)/$(TESTDIR)/$(n)*.$(CPPEXT))))
 $(foreach n,$(TEST_NAMES),$(eval TEST_EXTRA_OBJS_$(n):=$(patsubst $(SRCDIR)/$(TESTDIR)/%.$(CPPEXT),$(OBJDIR)/$(TESTDIR)/%.$(OBJEXT),$(TEST_EXTRA_CPPS_$(n)))))
@@ -118,29 +119,30 @@ $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(CPPEXT)
 	$(V)$(COMPILER) $(CPP_OPTIONS) -c -o $@  $$PWD/$<
 
 $(DEPDIR)/$(TESTDIR)/Test$*.$(DEPEXT): $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT)
-	
+
 .SECONDARY:
 
-$(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_INCLUDES += $(TEST_INCLUDES)
-$(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_DEFINES  += $(TEST_DEFINES)
-
+$(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_INCLUDES    += $(TEST_INCLUDES)
+$(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_DEFINES     += $(TEST_DEFINES)
+$(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_EXTRA_FLAGS += $($(*F)_EXTRA_CPP_FLAGS)
 	
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): TEST_CPP_EXTRA_FILES = $(wildcard $(SRCDIR)/$(TESTDIR)/$**.$(CPPEXT))
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): TEST_OBJ_EXTRA_FILES = $(TEST_CPP_EXTRA_FILES:$(SRCDIR)/%.$(CPPEXT)=$(OBJDIR)/%.$(OBJEXT))
-$(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): 
+$(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): TEST_SPECIFIC_LINK   = $(Test$(*F)_EXTRA_LINK_FLAGS)
+$(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT):
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT):
 	$(V)mkdir -p $(@D)
 	$(V)echo "  linking $@"
-	$(V)$(COMPILER) $(CPP_OPTIM) $(CPP_PLT) -g -o $@  $< $(TEST_OBJ_EXTRA_FILES) $(LINK_MY_LIB) $(TEST_EXTRA_LINK_LIBS)
+	$(V)$(COMPILER) $(CPP_OPTIM) $(CPP_PLT) -g -o $@  $< $(TEST_OBJ_EXTRA_FILES) $(LINK_MY_LIB) $(TEST_EXTRA_LINK_LIBS) $(TEST_SPECIFIC_LINK)
 
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTIND): $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 	$(V)echo; echo; echo "########################### testing $* ###########################"
-	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; $(TEST_LAUNCHER) ./$< $(TEST_ARGS_$*)
+	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$(Test$*_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; $(TEST_LAUNCHER) ./$< $(TEST_ARGS_$*)
 	$(V)echo; echo; echo "########################### end of test $* ###########################"; echo; echo
 	$(V)touch $@
 
 test-%: $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
-	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; ./$< $(TEST_ARGS_$*)
+	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$(Test$*_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; ./$< $(TEST_ARGS_$*)
 
 gdb-test-%: $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; gdb ./$<
@@ -148,6 +150,8 @@ gdb-test-%: $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 ifneq ($(TEST_DEP_FILES),)
 
 $(foreach n,$(TEST_NAMES),$(eval $(call testdeps,$(n))))
+
+$(foreach n,$(TEST_NAMES),$(if $(Test$(n)_EXTRA_DEPENDENCY),$(call testextradeps,$(n),)))
 
 -include $(TEST_DEP_FILES)
 
