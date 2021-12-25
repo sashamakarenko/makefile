@@ -137,7 +137,7 @@ $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT):
 	$(V)$(COMPILER) $(CPP_OPTIM) $(CPP_PLT) -g -o $@  $< $(TEST_OBJ_EXTRA_FILES) $(LINK_MY_LIB) $(TEST_EXTRA_LINK_LIBS) $(TEST_SPECIFIC_LINK)
 
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTIND): $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
-	$(V)echo; echo; echo "########################### testing $* ###########################"
+	$(V)echo; echo; str="########################### testing $* ###########################"; if test -t 1; then printf "\e[36;1m$$str\e[0m\n"; else echo "$$str"; fi
 	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$(Test$*_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; $(TEST_LAUNCHER) ./$< $(TEST_ARGS_$*)
 	$(V)echo; echo; echo "########################### end of test $* ###########################"; echo; echo
 	$(V)touch $@
