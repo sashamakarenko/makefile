@@ -41,7 +41,6 @@ TEST_INDICATORS:= $(TEST_TARGETS:%.$(TESTEXT)=%.$(TESTIND))
 TEST_NAMES     := $(filter-out $(DISABLED_TESTS),$(TEST_TARGETS:$(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)=%))
 
 testdeps = $(BINDIR)/$(TESTDIR)/Test$(1).$(TESTEXT): $(OBJDIR)/$(TESTDIR)/Test$(1).$(OBJEXT) $(TEST_EXTRA_OBJS_$(1)) $(TARGET) $(TEST_EXTRA_DEPENDENCY)
-testextradeps = $(OBJDIR)/$(TESTDIR)/Test$(1).$(OBJEXT): $(Test$(1)_EXTRA_DEPENDENCY)
 
 $(foreach n,$(TEST_NAMES),$(eval TEST_EXTRA_CPPS_$(n):=$(wildcard $(SRCDIR)/$(TESTDIR)/$(n)*.$(CPPEXT))))
 $(foreach n,$(TEST_NAMES),$(eval TEST_EXTRA_OBJS_$(n):=$(patsubst $(SRCDIR)/$(TESTDIR)/%.$(CPPEXT),$(OBJDIR)/$(TESTDIR)/%.$(OBJEXT),$(TEST_EXTRA_CPPS_$(n)))))
@@ -126,10 +125,11 @@ $(DEPDIR)/$(TESTDIR)/Test$*.$(DEPEXT): $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT)
 $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_INCLUDES    += $(TEST_INCLUDES)
 $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_DEFINES     += $(TEST_DEFINES)
 $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_EXTRA_FLAGS += $($(*F)_EXTRA_CPP_FLAGS)
-	
+
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): TEST_CPP_EXTRA_FILES = $(wildcard $(SRCDIR)/$(TESTDIR)/$**.$(CPPEXT))
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): TEST_OBJ_EXTRA_FILES = $(TEST_CPP_EXTRA_FILES:$(SRCDIR)/%.$(CPPEXT)=$(OBJDIR)/%.$(OBJEXT))
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): TEST_SPECIFIC_LINK   = $(Test$(*F)_EXTRA_LINK_FLAGS)
+$(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): $(Test$*_EXTRA_DEPENDENCY)
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT):
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT):
 	$(V)mkdir -p $(@D)
@@ -151,8 +151,6 @@ gdb-test-%: $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 ifneq ($(TEST_DEP_FILES),)
 
 $(foreach n,$(TEST_NAMES),$(eval $(call testdeps,$(n))))
-
-$(foreach n,$(TEST_NAMES),$(if $(Test$(n)_EXTRA_DEPENDENCY),$(call testextradeps,$(n),)))
 
 -include $(TEST_DEP_FILES)
 
