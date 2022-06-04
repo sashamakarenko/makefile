@@ -67,3 +67,6 @@ include ../makefile/Makefile
 ```
 
 Type make
+
+[![](https://hits.dwyl.com/sashamakarenko/makefile.svg?style=flat-square&show=unique)](http://hits.dwyl.com/sashamakarenko/makefile)
+
