@@ -1,7 +1,14 @@
 
-ifeq ($(PRJ_NAME),)
-    $(error PRJ_NAME must be defined)
+define checkvar
+ifeq ($$($1),)
+    $$(error $(1) must be defined)
 endif
+ifneq ($$($1),$$(word 1,$$($1)))
+    $$(error $(1) may not contain white spaces)
+endif
+endef
+
+$(foreach var,PRJ_NAME PRJ_BRANCH PRJ_VERSION PRJ_TYPE,$(eval $(call checkvar,$(var))))
 
 ####################### files #########################
 
