@@ -70,7 +70,7 @@ endif
 ifeq ($(PRJ_TYPE),exe)
     EXE_NAME     := $(PRJ_NAME)
     TARGET       := $(BINDIR)/$(EXE_NAME)
-    LINK_OPTIONS += 
+    LINK_OPTIONS +=
 endif
 
 ifeq ($(TARGET),)
@@ -91,8 +91,9 @@ else
 endif
 
 CPP_PLT      := -fno-plt
+CPP_PIC      ?= -fPIE -fPIC
 CPP_INCLUDES += -I$(SRCDIR)
-CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) -fPIC $(CPP_PLT) -g $(CPP_INCLUDES) $(CPP_DEFINES) $(CPP_EXTRA_FLAGS)
+CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) $(CPP_PIC) $(CPP_PLT) -g $(CPP_INCLUDES) $(CPP_DEFINES) $(CPP_EXTRA_FLAGS)
 
 V=@
 
@@ -170,7 +171,7 @@ go: $(TARGET)
 
 gdb-%:
 	$(SUBMAKE) BUILD_MODE=$* gdb
-	
+
 gdb: $(TARGET)
 	$(V)export LD_LIBRARY_PATH=$(LD_PATH):$$LD_LIBRARY_PATH; gdb ./$<
 
