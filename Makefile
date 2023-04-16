@@ -27,7 +27,7 @@ DEPDIR := $(BUILDDIR)/dep/$(BUILD_MODE)
 LIBDIR := $(BUILDDIR)/lib/$(BUILD_MODE)
 BINDIR := $(BUILDDIR)/bin/$(BUILD_MODE)
 
-CPP_FILES := $(wildcard $(SRCDIR)/$(PRJ_NAME)/*.$(CPPEXT))
+CPP_FILES := $(wildcard $(SRCDIR)/$(PRJ_NAME)/*.$(CPPEXT)) $(GENERATED_CPP_FILES)
 ifneq ($(SRCSUBDIRS),)
     CPP_FILES := $(CPP_FILES) $(foreach dir,$(SRCSUBDIRS),$(wildcard $(SRCDIR)/$(PRJ_NAME)/$(dir)/*.$(CPPEXT)))
 endif
@@ -91,7 +91,7 @@ else
 endif
 
 CPP_PLT      := -fno-plt
-CPP_PIC      ?= -fPIE -fPIC
+CPP_PIC      ?= -fPIC
 CPP_INCLUDES += -I$(SRCDIR)
 CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) $(CPP_PIC) $(CPP_PLT) -g $(CPP_INCLUDES) $(CPP_DEFINES) $(CPP_EXTRA_FLAGS)
 
