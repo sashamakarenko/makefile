@@ -77,7 +77,7 @@ ifeq ($(TARGET),)
     $(error PRJ_TYPE must be either lib or exe)
 endif
 
-SUBMAKE = $(V)$(MAKE) -s --no-print-directory
+SUBMAKE = +$(V)$(MAKE) -s --no-print-directory
 
 ####################### c++ #########################
 
