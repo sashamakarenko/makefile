@@ -186,6 +186,9 @@ clean-test-indicators:
 clean-tests::
 	$(V)rm -rf $(BINDIR)/$(TESTDIR) $(OBJDIR)/$(TESTDIR) $(DEPDIR)/$(TESTDIR)
 
+clean-test-%:
+	$(V)rm -f $(OBJDIR)/$(TESTDIR)/Test$*.$(OBJEXT) $(BINDIR)/$(TESTDIR)/Test$*.$(TESTEXT)
+
 clean::
 	$(V)rm -rf $(BUILDDIR)
 

@@ -7,6 +7,8 @@ __makefile_maka_complete()
         words=$( for f in src/tests/Test*.cpp; do if [[ -f $f ]]; then ff=$(basename $f); fff=${ff%%.cpp}; echo test-${fff#Test}; fi; done )
     elif [[ -n "$cur" && gdb-t = "${cur:0:5}" ]]; then
         words=$( for f in src/tests/Test*.cpp; do if [[ -f $f ]]; then ff=$(basename $f); fff=${ff%%.cpp}; echo gdb-test-${fff#Test}; fi; done )
+    elif [[ -n "$cur" && r = "${cur:0:1}" ]]; then
+        words=$( for f in src/tests/Test*.cpp; do if [[ -f $f ]]; then ff=$(basename $f); fff=${ff%%.cpp}; echo retest-${fff#Test}; fi; done )
     elif [[ ${#COMP_WORDS[@]} -eq 2 ]]; then
         words="all release debug clean clean-tests check recheck go gdb gdb-debug gdb-release gdb-test test-"
     #elif [[ "BUILD_MODE=" = "$cur" ]]; then
