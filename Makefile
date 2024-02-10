@@ -144,12 +144,12 @@ $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): $(Test$*_EXTRA_DEPENDENCY)
 
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTIND): $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 	$(V)echo; echo; str="########################### testing $* ###########################"; if test -t 1; then printf "\e[36;1m$$str\e[0m\n"; else echo "$$str"; fi
-	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$(Test$*_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; $(TEST_LAUNCHER) ./$< $(TEST_ARGS_$*)
+	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$(Test$*_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; $(TEST_LAUNCHER) $(Test$*_EXTRA_LAUNCHER) ./$< $(TEST_ARGS_$*)
 	$(V)echo; echo; echo "########################### end of test $* ###########################"; echo; echo
 	$(V)touch $@
 
 test-%: $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
-	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$(Test$*_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; ./$< $(TEST_ARGS_$*)
+	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$(Test$*_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; $(TEST_LAUNCHER) $(Test$*_EXTRA_LAUNCHER) ./$< $(TEST_ARGS_$*)
 
 gdb-test-%: $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 	$(V)export LD_LIBRARY_PATH=$(LIBDIR):$(TEST_EXTRA_LD_PATH):$$LD_LIBRARY_PATH; gdb ./$<
