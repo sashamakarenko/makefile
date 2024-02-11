@@ -10,7 +10,7 @@ __makefile_maka_complete()
     elif [[ -n "$cur" && r = "${cur:0:1}" ]]; then
         words=$( for f in src/tests/Test*.cpp; do if [[ -f $f ]]; then ff=$(basename $f); fff=${ff%%.cpp}; echo retest-${fff#Test}; fi; done )
     elif [[ ${#COMP_WORDS[@]} -eq 2 ]]; then
-        words="all release debug clean clean-tests check recheck go gdb gdb-debug gdb-release gdb-test test-"
+        words="all release debug clean clean-tests check recheck go gdb gdb-debug gdb-release gdb-test build-all-tests test-"
     #elif [[ "BUILD_MODE=" = "$cur" ]]; then
     #    words="BUILD_MODE=debug BUILD_MODE=release"        
     fi
