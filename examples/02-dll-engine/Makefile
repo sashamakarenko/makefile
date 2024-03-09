@@ -5,4 +5,6 @@ PRJ_TYPE    := lib
 PRJ_LIB_TYPE:= dynamic
 PRJ_DEPENDENCIES := ../01-lib-battery
 
+TEST_DEFINES = -DEXIT_ON_ERROR
+
 include ../../Makefile

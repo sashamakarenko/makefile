@@ -1,4 +1,6 @@
 #include <engine/Engine.h>
+#include <engine/PrjInfo.h>
+#include <specs/Types.h>
 
 namespace engine
 {

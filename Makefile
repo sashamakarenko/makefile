@@ -14,10 +14,20 @@ endef
 
 $(foreach var,PRJ_NAME PRJ_BRANCH PRJ_VERSION PRJ_TYPE,$(eval $(call checkvar,$(var))))
 
+ifeq ($(filter $(PRJ_TYPE),inc lib exe),)
+    $(error PRJ_TYPE must be either inc, lib or exe)
+endif
+
+MAKECMD = $(MAKE) -s --no-print-directory BUILD_MODE=$(BUILD_MODE)
+SUBMAKE = $(MAKECMD) -j1 IS_SUBMAKE=true MAKEFLAGS= MFLAGS=
+REMAKE  = +$(V)$(MAKECMD)
+
+PRJ_INFO ?= PrjInfo.h
+
 ####################### files #########################
 
 SRCDIR := src
-CPPEXT := cpp
+CPPEXT ?= cpp
 OBJEXT := o
 DEPEXT := mk
 TESTEXT:= exe
@@ -25,6 +35,10 @@ TESTIND:= done
 
 BUILDDIR   := build
 BUILD_MODE ?= release
+
+ifeq ($(filter $(BUILD_MODE),release debug),)
+    $(error BUILD_MODE must be either release or debug)
+endif
 
 OBJDIR := $(BUILDDIR)/obj/$(BUILD_MODE)
 DEPDIR := $(BUILDDIR)/dep/$(BUILD_MODE)
@@ -34,6 +48,16 @@ BINDIR := $(BUILDDIR)/bin/$(BUILD_MODE)
 CPP_FILES := $(wildcard $(SRCDIR)/$(PRJ_NAME)/*.$(CPPEXT)) $(GENERATED_CPP_FILES)
 ifneq ($(SRCSUBDIRS),)
     CPP_FILES := $(CPP_FILES) $(foreach dir,$(SRCSUBDIRS),$(wildcard $(SRCDIR)/$(PRJ_NAME)/$(dir)/*.$(CPPEXT)))
+endif
+
+CPP_HEADERS := $(foreach e,h hpp hxx hh,$(wildcard $(SRCDIR)/$(PRJ_NAME)/*.$e))
+ifneq ($(SRCSUBDIRS),)
+    CPP_HEADERS := $(CPP_HEADERS) $(foreach dir,$(SRCSUBDIRS),$(foreach e,h hpp hxx hh,$(wildcard $(SRCDIR)/$(PRJ_NAME)/$(dir)/*.$e)))
+endif
+
+ifneq ($(PRJ_INFO),)
+    PRJ_INFO_HEADER   = $(shell if ( test ! -f $(SRCDIR)/$(PRJ_NAME)/$(PRJ_INFO) ) || grep -q $(MAKEFILE_UUID) $(SRCDIR)/$(PRJ_NAME)/$(PRJ_INFO); then echo $(SRCDIR)/$(PRJ_NAME)/$(PRJ_INFO); fi)
+    PREBUILD_TARGETS += $(PRJ_INFO_HEADER)
 endif
 
 OBJ_FILES := $(CPP_FILES:$(SRCDIR)/%.$(CPPEXT)=$(OBJDIR)/%.$(OBJEXT))
@@ -58,7 +82,14 @@ $(foreach n,$(TEST_NAMES),$(eval TEST_EXTRA_CPPS_$(n):=$(wildcard $(SRCDIR)/$(TE
 $(foreach n,$(TEST_NAMES),$(eval TEST_EXTRA_OBJS_$(n):=$(patsubst $(SRCDIR)/$(TESTDIR)/%.$(CPPEXT),$(OBJDIR)/$(TESTDIR)/%.$(OBJEXT),$(TEST_EXTRA_CPPS_$(n)))))
 endif
 
+####################### target #########################
+
 TARGET :=
+
+ifeq ($(PRJ_TYPE),inc)
+	TARGET := $(BUILDDIR)
+endif
+
 TARGET_IS_DYMANIC := true
 ifeq ($(PRJ_TYPE),lib)
     ifeq ($(PRJ_BRANCH),)
@@ -96,14 +127,6 @@ ifeq ($(PRJ_TYPE),exe)
 	PRJ_LIB_TYPE :=
 endif
 
-ifeq ($(TARGET),)
-    $(error PRJ_TYPE must be either lib or exe)
-endif
-
-MAKECMD = $(MAKE) -s --no-print-directory
-SUBMAKE = $(MAKECMD) IS_SUBMAKE=true
-REMAKE  = +$(V)$(MAKECMD)
-
 ####################### deps #########################
 
 DEP_DIRS :=
@@ -115,22 +138,20 @@ ifneq ($(PRJ_DEPENDENCIES),)
 
 ifeq ($(DEP_DIRS),)
     DEP_DIRECT_DIRS := $(foreach d,$(PRJ_DEPENDENCIES),$(shell readlink -e $d)) 
-    DEP_DEP_DIRS    := $(foreach d,$(PRJ_DEPENDENCIES),$(shell $(SUBMAKE) -C $d show-var-DEP_DIRECT_DIRS show-var-DEP_DEP_DIRS))
-	ifneq ($(IS_SUBMAKE),true)
-        depdirs = DEP_DIRS:=$(filter-out $(1),$(DEP_DIRS)) $(1)
+    DEP_DEP_DIRS    := $(foreach d,$(PRJ_DEPENDENCIES),$(shell $(SUBMAKE) -C $d show-var-DEP_DIRECT_DIRS show-var-DEP_DEP_DIRS 2>/dev/null))
+    ifneq ($(IS_SUBMAKE),true)
+        depdirs    = DEP_DIRS:=$(filter-out $(1),$(DEP_DIRS)) $(1)
+        deprevdirs = DEP_REV_DIRS:=$(1) $(filter-out $(1),$(DEP_REV_DIRS))
 	    blank  :=
 	    space  := $(blank) $(blank)
         $(foreach d,$(DEP_DIRECT_DIRS) $(DEP_DEP_DIRS),$(eval $(call depdirs,$(d)) ) )
-        DEP_LINK_OPTIONS:= $(foreach d,$(DEP_DIRS),$(shell $(SUBMAKE) -C $d show-var-LINK_MY_LIB))
+        $(foreach d,$(DEP_DIRS),$(eval $(call deprevdirs,$(d)) ) )
+        DEP_LINK_OPTIONS:= $(foreach d,$(DEP_DIRS),$(shell $(SUBMAKE) -C $d show-var-LINK_MY_LIB 2>/dev/null))
         DEP_INCLUDES    := $(foreach d,$(DEP_DIRS),-I$d/src)
-        DEP_TARGETS     := $(foreach d,$(DEP_DIRS),$d/$(shell $(SUBMAKE) -C $d show-var-TARGET))
+        DEP_TARGETS     := $(foreach d,$(DEP_DIRS),$d/$(shell $(SUBMAKE) -C $d show-var-TARGET 2>/dev/null))
         DEP_LD_LIB_PATH := $(foreach d,$(DEP_DIRS),$d/$(LIBDIR):)
 	    DEP_LD_LIB_PATH := $(subst $(space),,$(DEP_LD_LIB_PATH))
-	endif
-#$(warning $(PRJ_NAME):DEP_DIRS=$(DEP_DIRS))
-#$(info DEP_LINK_OPTIONS=$(DEP_LINK_OPTIONS))
-#$(info DEP_TARGETS=$(DEP_TARGETS))
-#$(warning $(IS_SUBMAKE) $(CURDIR) / $(DEP_DIRS))
+    endif
 endif
 
 BUILD_DEPS := build-deps
@@ -152,16 +173,32 @@ CPP_PLT      := -fno-plt
 CPP_PIC      ?= -fPIC
 CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) $(CPP_PIC) $(CPP_PLT) -g -I$(SRCDIR) $(CPP_INCLUDES) $(DEP_INCLUDES) $(CPP_DEFINES) $(CPP_EXTRA_FLAGS)
 
-V=@
+# V stands for Verbose
+# use 'make V=' or 'make VERBOSE=true' to make it verbose
+ifneq ($(VERBOSE),true)
+V ?= @
+endif
 
 ####################### rules #########################
 
-all: $(TARGET)
+all: $(TARGET) | $(PREBUILD_TARGETS)
 
 debug release:
 	$(REMAKE) BUILD_MODE=$@
 
-$(TARGET): $(OBJ_FILES) $(DEP_TARGETS) $(TARGET_EXTRA_DEPENDENCY) $(GDB_PRINTER) | $(BUILD_DEPS)
+ifeq ($(PRJ_TYPE),inc)
+
+$(TARGET): $(PRJ_INFO_HEADER) $(DEP_TARGETS) $(CPP_HEADERS) $(TARGET_EXTRA_DEPENDENCY) $(GDB_PRINTER) #$(BUILD_DEPS)
+	$(V)mkdir -p $@
+	$(V)touch $@
+	$(V)echo "  checking $(PRJ_NAME) $(words $(CPP_HEADERS)) headers"
+ifneq ($(PRJ_POSTBUILD_TARGET),)
+	$(REMAKE) $(PRJ_POSTBUILD_TARGET)
+endif
+
+else # PRJ_TYPE != inc
+
+$(TARGET):  $(PRJ_INFO_HEADER) $(OBJ_FILES) $(DEP_TARGETS) $(TARGET_EXTRA_DEPENDENCY) $(GDB_PRINTER) #$(BUILD_DEPS)
 	$(V)mkdir -p $(@D)
 	$(V)echo "  linking $@"
 ifeq ($(PRJ_LIB_TYPE),static)
@@ -172,6 +209,8 @@ endif
 ifneq ($(PRJ_POSTBUILD_TARGET),)
 	$(REMAKE) $(PRJ_POSTBUILD_TARGET)
 endif
+
+endif # PRJ_TYPE
 
 ifneq ($(SRC_GDB_PRINTER),)
 $(GDB_PRINTER): $(SRC_GDB_PRINTER)
@@ -194,12 +233,28 @@ $(DEPDIR)/$(TESTDIR)/Test%.$(DEPEXT): $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT)
 ifneq ($(PRJ_DEPENDENCIES),)
 $(DEPVARS): Makefile
 	$(V)mkdir -p $(@D)
-	$(V)echo "DEP_DIRS=$(DEP_DIRS)" > $@
-	$(V)echo "DEP_INCLUDES=$(DEP_INCLUDES)" >> $@
-	$(V)echo "DEP_LINK_OPTIONS=$(DEP_LINK_OPTIONS)" >> $@
-	$(V)echo "DEP_LD_LIB_PATH=$(DEP_LD_LIB_PATH)" >> $@
-	$(V)echo "DEP_TARGETS=$(DEP_TARGETS)" >> $@
+	$(V)echo "DEP_DIRS:=$(DEP_DIRS)" > $@
+	$(V)echo "DEP_REV_DIRS:=$(DEP_REV_DIRS)" >> $@
+	$(V)echo "DEP_INCLUDES:=$(DEP_INCLUDES)" >> $@
+	$(V)echo "DEP_LINK_OPTIONS:=$(DEP_LINK_OPTIONS)" >> $@
+	$(V)echo "DEP_LD_LIB_PATH:=$(DEP_LD_LIB_PATH)" >> $@
+	$(V)echo "DEP_TARGETS:=$(DEP_TARGETS)" >> $@
 endif
+
+fake-prjinfo-header $(PRJ_INFO_HEADER): Makefile
+	$(V)echo "  generating $@"
+	$(V)mkdir -p $(@D)
+	$(V)echo "#pragma once" > $@
+	$(V)echo "#ifndef DECLARE_$(PRJ_NAME)_PrjInfo_h" >> $@
+	$(V)echo "#define DECLARE_$(PRJ_NAME)_PrjInfo_h" >> $@
+	$(V)echo "// remove the line below if you edit this file" >> $@
+	$(V)echo "// generated by Makefile $(MAKEFILE_UUID)" >> $@
+	$(V)echo "namespace $(PRJ_NAME) {" >> $@
+	$(V)echo "constexpr const char * const PRJ_NAME    = \"$(PRJ_NAME)\";" >> $@
+	$(V)echo "constexpr const char * const PRJ_BRANCH  = \"$(PRJ_BRANCH)\";" >> $@
+	$(V)echo "constexpr const char * const PRJ_VERSION = \"$(PRJ_VERSION)\";" >> $@
+	$(V)echo "}" >> $@
+	$(V)echo "#endif" >> $@
 
 ####################### dependencies #########################
 
@@ -207,14 +262,19 @@ endif
 
 ifneq ($(DEP_DIRS),)
 
-define deplib
-$(1):
-	@echo "  Building $(1)"; $(MAKECMD) -C $(2)
+ifneq ($(DEP_TARGETS),)
+$(DEP_TARGETS): $(BUILD_DEPS)
+endif
+
+define builddep =
+$(REMAKE) -C $(1) BUILD_DEPS=
+
 endef
-$(foreach d,$(DEP_DIRS),$(eval $(call deplib,$d/$(shell $(SUBMAKE) -C $d show-var-TARGET),$d)) )
 
 build-deps:
-	+$(V)for d in $(DEP_DIRS); do $(MAKECMD) -C $$d; done
+#	$(V)echo "  $@"
+	+$(foreach d,$(DEP_REV_DIRS),$(call builddep,$d) )
+#	+$(V)for d in $(DEP_REV_DIRS); do $(MAKECMD) -C $$d BUILD_DEPS= ; done
 
 clean-deps:
 	+$(V)for d in $(DEP_DIRS); do $(MAKECMD) -C $$d clean; done
@@ -239,7 +299,7 @@ rebuild-all:
 
 .SECONDARY:
 
-$(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_INCLUDES    += $(TEST_INCLUDES)
+$(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_INCLUDES    += $(TEST_INCLUDES) -I$(THIS_MAKEFILE_DIR)
 $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_DEFINES     += $(TEST_DEFINES)
 $(OBJDIR)/$(TESTDIR)/Test%.$(OBJEXT): CPP_EXTRA_FLAGS += $($(*F)_EXTRA_CPP_FLAGS)
 
@@ -275,12 +335,16 @@ endif
 
 ####################### internals #########################
 
-.PHONY: find-makefile-dir #show-var-DEP_DIRECT_DIRS show-var-DEP_DEP_DIRS show-var-LINK_MY_LIB show-var-TARGET
+.PHONY: find-makefile-dir # show-var-DEP_DIRECT_DIRS show-var-DEP_DEP_DIRS show-var-LINK_MY_LIB show-var-TARGET
 
 show-var-%:
-	$(V)echo $($*)
+	@echo $($*)
 
+THIS_MAKEFILE_DIR = $(shell readlink -e $(dir $(foreach m,$(MAKEFILE_LIST),$(wildcard $(dir $m)/bash-completion-to-source.sh))))
 find-makefile-dir:
+	@echo $(THIS_MAKEFILE_DIR)
+
+find-makefile-dir-uuid:
 	$(V)for f in $(MAKEFILE_LIST); do \
 	if test Makefile = $$(basename $$f) -a "x$(MAKEFILE_UUID)" = "x$$(sed -n '/^MAKEFILE_UUID=/s/.*=\(.*\)/\1/gp' $$f)"; then \
 	    readlink -e $$(dirname $$f); \
@@ -288,9 +352,11 @@ find-makefile-dir:
 	fi;\
 	done
 
-generate-vscode: MAKEFILE_DIR=$(shell $(SUBMAKE) find-makefile-dir)
 generate-vscode:
-	$(V)$(MAKEFILE_DIR)/generate-vscode.sh $(CURDIR) $(DEP_DIRS)
+	$(V)$(THIS_MAKEFILE_DIR)/generate-vscode.sh $(CURDIR) $(DEP_DIRS)
+
+help:
+	$(V)cat $(THIS_MAKEFILE_DIR)/README.md | sed 's/^##\(.*\)/\x1b[93;1m##\1\x1b[0m/g' | less -r
 
 ####################### launching #########################
 
@@ -343,7 +409,7 @@ clean-test-%:
 	$(V)rm -f $(OBJDIR)/$(TESTDIR)/Test$*.$(OBJEXT) $(BINDIR)/$(TESTDIR)/Test$*.$(TESTEXT)
 
 clean::
-	$(V)rm -rf $(BUILDDIR)
+	$(V)rm -rf $(BUILDDIR) $(PRJ_INFO_HEADER)
 
 -include $(DEP_FILES)
 

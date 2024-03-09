@@ -7,6 +7,8 @@ main_dir=$1
 all_dirs="$@"
 reversed_dirs=$(echo "$all_dirs" | tr ' ' '\n' | tac)
 
+this_script_dir=$(readlink -e $(dirname $0))
+
 isMyFile()
 {
     head -1 $1 | grep -q "$token"
@@ -93,14 +95,18 @@ generateCppProperties()
             "name": "Linux",
             "includePath": [
                 "\${default}",
-                "src",
 EOF_PROPS_START
     local dep
     for dep in $prjdeps; do
         echo "                 \"$dep/src\"," >>$out
     done
+    local utests=$(getPrjUnitTestNames $dir)
+    if [[ -n "$utests" ]]; then
+        echo "                 \"${this_script_dir}\"," >>$out
+    fi
     cat <<EOF_PROPS_END>>$out
             $(buildIncludes $dir CPP_INCLUDES)
+                 "src"
             ],
             "defines": [$(buildDefines $dir CPP_DEFINES)
             ]
