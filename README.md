@@ -5,16 +5,16 @@ It is basically designed for my personal projects but could be suitable for peop
 
 ## Features
 
-- It builds projects of type `lib`, `exe` and `inc`.
-- Supports `release` and `debug` compilation modes.
-- Builds and launches unit tests.
-- Launches exe and unit tests with GDB.
-- Supports pretty printers for GDB.
+- It [builds](#compilation) projects of type `lib`, `exe` and `inc`.
+- Supports `release` and `debug` compilation [modes](#build-mode).
+- Builds and launches [unit tests](#unit-tests).
+- [Launches](#running) exe and unit tests with GDB.
+- Supports [pretty printers](#gdb-pretty-printers) for GDB.
 - Supports parallel builds.
-- Works by convention. No need to list source files etc.
-- Produces dynamic libraries with the project's branch in name to allow patches.
-- bash completion is available.
-- Supports [vscode](https://code.visualstudio.com/) workspace generation.
+- Works by [convention](#project-layout-convention). No need to list source files etc.
+- Produces dynamic libraries with the project's branch in name to [allow patches](#library-names-and-version-management).
+- [bash completion](#bash-completion) is available.
+- Supports [vscode](https://code.visualstudio.com/) workspace [generation](#generating-vscode-workspace).
 
 ## How-to
 
@@ -272,7 +272,31 @@ SRCSUBDIRS = impl impl/generated
 - `make clean-deps` will clean dependencies
 - `make clean-all` will clean dependencies and your project
 
-### Binary names and version management
+### Library names and version management
+
+For a dynamic library project `prja-1.0.0` the binary will be named `libprja-1.0.so` where `1.0` comes from `PRJ_BRANCH`. The convention is to keep backward compatible all versions on the same branch.
+Thus incrementing `PRJ_VERSION` will not break linking and runtime dependency. If you break ABI better do it in a different branch.
+
+
+```
+           1.1
+            |
+            o <1.1.0>
+1.0         |
+ |          |
+ o          |
+ |          |
+ |          |
+ o <1.0.1>  |
+ |          |
+ |          |
+ o----------+
+ |
+ |
+ o <1.0.0>
+ |
+ |
+```
 
 ### Other variables
 
@@ -299,7 +323,7 @@ Write your pretty printers in `src/gdb/printers.py` and it will be copied next t
 All unit test files `src/tests/Test*.cpp` are automatically detected. They are considered as separate executables.
 For instance a `TestXXX.cpp` will be built as `bin/release/tests/TestXXX.exe`.
 
-- `make check` will build and launch all unit tests. Running it again will not launch the tests already done. 
+- `make check` will build and launch all unit tests. Running it again will not launch the tests already done.
 - `make recheck` will build if necessary and launch all unit tests.
 - `make test-XXX` will build and launch only `bin/release/tests/TestXXX.exe`. Typing `make test-[TAB][TAB]` will propose all available tests if the bash completion has been activated.
 - `make test-XXX BUILD_MODE=debug` will build and launch only `bin/debug/tests/TestXXX.exe`
@@ -353,9 +377,61 @@ TEST_DEFINES = -DEXIT_ON_ERROR
 
 ## Bash completion
 
+Sourcing `bash-completion-to-source.sh` will make bash completion available for `make [TAB][TAB]`.
+If ou have unit tests `make test-[TAB][TAB]` will list all available test to build and run.
+
+Example:
+
+```bash
+examples/02-dll-engine> make test-[TAB][TAB]
+test-Anything  test-Engine
+```
+
 ## Generating vscode workspace
 
+`make generate-vscode` will create `.vscode` dir in all dependencies. It will generate `.vscode/tasks.json` and `.vscode/launch.json` only within the main project to avoid spamming the pull down menu `Ctrl+Shift+b`. If you need tasks from a dependency to be available you can go their and invoke `make generate-vscode`.
+
+Example:
+```bash
+examples/05-exe-peugeot> make generate-vscode
+
+ specs-1.0.0 /path/to/this/makefile/examples/00-inc-specs
+ - generating /path/to/this/makefile/examples/00-inc-specs/.vscode/c_cpp_properties.json
+
+ battery-2.0.0 /path/to/this/makefile/examples/01-lib-battery 00-inc-specs
+ - generating /path/to/this/makefile/examples/01-lib-battery/.vscode/c_cpp_properties.json
+
+ computer-1.0.0 /path/to/this/makefile/examples/03-dll-computer 01-lib-battery 00-inc-specs
+ - generating /path/to/this/makefile/examples/03-dll-computer/.vscode/c_cpp_properties.json
+
+ engine-1.0.0 /path/to/this/makefile/examples/02-dll-engine 01-lib-battery 00-inc-specs
+ - generating /path/to/this/makefile/examples/02-dll-engine/.vscode/c_cpp_properties.json
+
+ car-1.0.0 /path/to/this/makefile/examples/04-dll-car 02-dll-engine 03-dll-computer 01-lib-battery 00-inc-specs
+ - generating /path/to/this/makefile/examples/04-dll-car/.vscode/c_cpp_properties.json
+
+ peugeot-207.0.0 /path/to/this/makefile/examples/05-exe-peugeot 04-dll-car 02-dll-engine 03-dll-computer 01-lib-battery 00-inc-specs
+ - generating /path/to/this/makefile/examples/05-exe-peugeot/.vscode/c_cpp_properties.json
+ - generating /path/to/this/makefile/examples/05-exe-peugeot/.vscode/tasks.json
+ - generating /path/to/this/makefile/examples/05-exe-peugeot/.vscode/launch.json
+ - generating /path/to/this/makefile/examples/05-exe-peugeot/.vscode/peugeot.code-workspace
+
+  You can now open /path/to/this/makefile/examples/05-exe-peugeot/.vscode/peugeot.code-workspace
+
+```
+
 ## Examples
+
+In `examples` you will find primitive but representative projects.
+
+| dir             |dependencies| nota |
+|-----------------|------------|------|
+| 00-inc-specs    | |  |
+| 01-lib-battery  | specs |  |
+| 02-dll-engine   | battery | has unit tests and pretty printers |
+| 03-dll-computer | battery |  |
+| 04-dll-car      | engine computer |  |
+| 05-exe-peugeot  | car | |
 
 
 [![](https://hits.dwyl.com/sashamakarenko/makefile.svg?style=flat-square&show=unique)](http://hits.dwyl.com/sashamakarenko/makefile)
