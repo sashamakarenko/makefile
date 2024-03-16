@@ -350,7 +350,7 @@ Example [examples/02-dll-engine/src/tests/TestAnything.cpp](examples/02-dll-engi
 
 ### Disabling specific tests
 
-If fore some reasons you have to disable unit tests XXX and YYY do this:
+If for some reasons you have to disable unit tests XXX and YYY do this:
 
 ```Makefile
 DISABLED_TESTS = XXX YYY
@@ -378,7 +378,7 @@ TEST_DEFINES = -DEXIT_ON_ERROR
 ## Bash completion
 
 Sourcing `bash-completion-to-source.sh` will make bash completion available for `make [TAB][TAB]`.
-If ou have unit tests `make test-[TAB][TAB]` will list all available test to build and run.
+If you have unit tests `make test-[TAB][TAB]` will list all available test to build and run.
 
 Example:
 
@@ -426,7 +426,7 @@ In [examples](examples) you will find primitive but representative projects.
 
 | dir             |dependencies| nota |
 |-----------------|------------|------|
-| [00-inc-specs](examples/00-inc-specs)       | |  |
+| [00-inc-specs](examples/00-inc-specs)       | | header only project with a unit test |
 | [01-lib-battery](examples/01-lib-battery)   | specs |  |
 | [02-dll-engine](examples/02-dll-engine)     | battery | has unit tests and pretty printers |
 | [03-dll-computer](examples/03-dll-computer) | battery |  |
