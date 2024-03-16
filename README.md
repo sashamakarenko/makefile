@@ -334,7 +334,7 @@ For instance a `TestXXX.cpp` will be built as `bin/release/tests/TestXXX.exe`.
 ### Extra source files
 
 If a unit test `TestXXX.cpp` requires extra files write them as `XXX*.cpp` and they will be compiled and linked along with `TestXXX.cpp`.
-Example `examples/02-dll-engine/src/tests/TestAnything.cpp`.
+Example [examples/02-dll-engine/src/tests/TestAnything.cpp](examples/02-dll-engine/src/tests/TestAnything.cpp).
 
 ### Variables
 
@@ -359,7 +359,7 @@ DISABLED_TESTS = XXX YYY
 ### Trivial helper
 
 One can use any unit test framework. Just feed properly the variables `TEST_INCLUDES` and `TEST_EXTRA_LINK_LIBS`.
-If a very simple condition verification is enough, you can use the trivial helper file coming with this makefile.
+If a very simple condition verification is enough, you can use the trivial helper [file](utests/TrivialHelper.h) coming with this makefile.
 
 ```c++
 #include <utests/TrivialHelper.h>
@@ -422,16 +422,16 @@ examples/05-exe-peugeot> make generate-vscode
 
 ## Examples
 
-In `examples` you will find primitive but representative projects.
+In [examples](examples) you will find primitive but representative projects.
 
 | dir             |dependencies| nota |
 |-----------------|------------|------|
-| 00-inc-specs    | |  |
-| 01-lib-battery  | specs |  |
-| 02-dll-engine   | battery | has unit tests and pretty printers |
-| 03-dll-computer | battery |  |
-| 04-dll-car      | engine computer |  |
-| 05-exe-peugeot  | car | |
+| [00-inc-specs](examples/00-inc-specs)       | |  |
+| [01-lib-battery](examples/01-lib-battery)   | specs |  |
+| [02-dll-engine](examples/02-dll-engine)     | battery | has unit tests and pretty printers |
+| [03-dll-computer](examples/03-dll-computer) | battery |  |
+| [04-dll-car](examples/04-dll-car)           | engine computer |  |
+| [05-exe-peugeot](examples/05-exe-peugeot)   | car | |
 
 
 [![](https://hits.dwyl.com/sashamakarenko/makefile.svg?style=flat-square&show=unique)](http://hits.dwyl.com/sashamakarenko/makefile)
