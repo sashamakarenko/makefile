@@ -171,7 +171,8 @@ endif
 
 CPP_PLT      := -fno-plt
 CPP_PIC      ?= -fPIC
-CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) $(CPP_PIC) $(CPP_PLT) -g -I$(SRCDIR) $(CPP_INCLUDES) $(DEP_INCLUDES) $(CPP_DEFINES) $(CPP_EXTRA_FLAGS)
+CPP_PSABI    ?= -Wno-psabi
+CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) $(CPP_PIC) $(CPP_PLT) $(CPP_PSABI) -g -I$(SRCDIR) $(CPP_INCLUDES) $(DEP_INCLUDES) $(CPP_DEFINES) $(CPP_EXTRA_FLAGS)
 
 # V stands for Verbose
 # use 'make V=' or 'make VERBOSE=true' to make it verbose

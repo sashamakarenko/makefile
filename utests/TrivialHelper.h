@@ -42,8 +42,10 @@ constexpr const char * const TTY_RESET = "\e[0m";
     bool check_isGood_ = check_res_ CONDITION;\
     {\
         LogGuard g__;\
-        if( not check_isGood_ ) { std::cerr << "\e[33;1m" << __FILE__ << ":" << __LINE__ << ": " << TTY_RESET; } \
-        ( check_isGood_ ? std::cout : std::cerr ) << PREFIX << #TITLE << " : " << ( check_isGood_ ? "\e[34m<\e[32;1m" : "\e[35m<\e[31;1m" ) << std::boolalpha << check_res_ << ( check_isGood_ ? "\e[34m>" : "\e[35m>" ) << TTY_RESET << std::endl;\
+        if( not check_isGood_ ) { \
+            std::cerr << "\e[33;1m" << __FILE__ << ":" << __LINE__ << TTY_RESET << ": \e[1m" << #TITLE << " : " << "\e[35m<\e[31;1m" << std::boolalpha << check_res_ << "\e[35m>" << TTY_RESET << std::endl; } \
+        else \
+            std::cout << PREFIX << std::setw(4) << __LINE__ << ": \e[1m" << #TITLE << " : " << "\e[34m<\e[32;1m" << std::boolalpha << check_res_ << "\e[34m>" << TTY_RESET << std::endl;\
     }\
     CHECK_EXIT\
 }
