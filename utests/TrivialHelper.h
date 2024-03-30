@@ -38,16 +38,22 @@ struct LogGuard
 constexpr const char * const TTY_RESET = "\e[0m";
 
 #define CHECK_PREFIXED( PREFIX, TITLE, EXPR, CONDITION ) {\
-    auto check_res_ = EXPR;\
-    bool check_isGood_ = check_res_ CONDITION;\
-    {\
+    try { \
+        const auto & check_res_ = EXPR;\
+        bool check_isGood_ = check_res_ CONDITION;\
+        {\
+            LogGuard g__;\
+            if( not check_isGood_ )\
+                std::cerr << "\e[33;1m" << __FILE__ << ":" << __LINE__ << TTY_RESET << ": \e[1m" << #TITLE << " : " << "\e[35m<\e[31;1m" << std::boolalpha << check_res_ << "\e[35m>" << TTY_RESET << std::endl;\
+            else \
+                std::cout << PREFIX << std::setw(4) << __LINE__ << ": \e[1m" << #TITLE << " : " << "\e[34m<\e[32;1m" << std::boolalpha << check_res_ << "\e[34m>" << TTY_RESET << std::endl;\
+        }\
+        CHECK_EXIT\
+    } catch( const std::exception & ex ){\
         LogGuard g__;\
-        if( not check_isGood_ ) { \
-            std::cerr << "\e[33;1m" << __FILE__ << ":" << __LINE__ << TTY_RESET << ": \e[1m" << #TITLE << " : " << "\e[35m<\e[31;1m" << std::boolalpha << check_res_ << "\e[35m>" << TTY_RESET << std::endl; } \
-        else \
-            std::cout << PREFIX << std::setw(4) << __LINE__ << ": \e[1m" << #TITLE << " : " << "\e[34m<\e[32;1m" << std::boolalpha << check_res_ << "\e[34m>" << TTY_RESET << std::endl;\
+        std::cerr << "\e[33;1m" << __FILE__ << ":" << __LINE__ << " \e[96;1m exception" << TTY_RESET << ": \e[1m" << #TITLE << " : \e[35m<\e[31;1m" << ex.what() << "\e[35m>" << TTY_RESET << std::endl;\
+        throw;\
     }\
-    CHECK_EXIT\
 }
 
 constexpr std::array< const char * const, 4 > TTY_FGS =
