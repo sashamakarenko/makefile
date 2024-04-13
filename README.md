@@ -308,6 +308,7 @@ Thus incrementing `PRJ_VERSION` will not break linking and runtime dependency. I
 | CPP_OPTIM            | -O0 or -O3 -DNDEBUG | Optimization options |
 | CPP_PLT              | -fno-plt            | PLT option |
 | CPP_PIC              | -fPIC               | PIC option |
+| CPP_COVERAGE         |                     | coverage options |
 | CPP_DEFINES          |                     | passed to the compiler |
 | CPP_INCLUDES         |                     | passed to the compiler |
 | CPP_EXTRA_FLAGS      |                     | passed to the compiler |
@@ -329,7 +330,19 @@ For instance a `TestXXX.cpp` will be built as `bin/release/tests/TestXXX.exe`.
 - `make test-XXX BUILD_MODE=debug` will build and launch only `bin/debug/tests/TestXXX.exe`
 - `make build-all-tests` will only build all unit tests.
 - `make gdb-test-XXX [BUILD_MODE=debug]` will build and launch your tests in GDB.
+- `make lcov` run unit tests with coverage on and generate [lcov](https://github.com/linux-test-project/lcov) reports.
 - `make clean-tests` will clean only test related files.
+- `make clean-lcov` will clean only coverage related files.
+
+## Coverage
+
+To build with coverage options one can use
+```bash
+$> make clean
+$> make COVERAGE=true check
+```
+
+or ask [lcov](https://github.com/linux-test-project/lcov) to generate the coverage reports after running unit tests with `make lcov`.
 
 ### Extra source files
 

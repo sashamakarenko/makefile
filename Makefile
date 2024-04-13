@@ -169,10 +169,23 @@ else
     CPP_OPTIM := -O0
 endif
 
+ifneq ($(MAKECMDGOALS),$(filter-out lcov,$(MAKECMDGOALS)))
+    COVERAGE=true
+endif
+
+COVERAGE_FLAGS := --coverage -fprofile-arcs
+ifeq ($(COVERAGE),true)
+	CPP_COVERAGE  :=$(COVERAGE_FLAGS)
+	LINK_COVERAGE :=$(COVERAGE_FLAGS)
+else
+	CPP_COVERAGE  :=
+	LINK_COVERAGE :=
+endif
+
 CPP_PLT      := -fno-plt
 CPP_PIC      ?= -fPIC
 CPP_PSABI    ?= -Wno-psabi
-CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) $(CPP_PIC) $(CPP_PLT) $(CPP_PSABI) -g -I$(SRCDIR) $(CPP_INCLUDES) $(DEP_INCLUDES) $(CPP_DEFINES) $(CPP_EXTRA_FLAGS)
+CPP_OPTIONS  += $(CPP_STD) $(CPP_OPTIM) $(CPP_PIC) $(CPP_PLT) $(CPP_PSABI) $(CPP_COVERAGE) -g -I$(SRCDIR) $(CPP_INCLUDES) $(DEP_INCLUDES) $(CPP_DEFINES) $(CPP_EXTRA_FLAGS)
 
 # V stands for Verbose
 # use 'make V=' or 'make VERBOSE=true' to make it verbose
@@ -205,7 +218,7 @@ $(TARGET):  $(PRJ_INFO_HEADER) $(OBJ_FILES) $(DEP_TARGETS) $(TARGET_EXTRA_DEPEND
 ifeq ($(PRJ_LIB_TYPE),static)
 	$(V)ar csr $@  $(OBJ_FILES)
 else
-	$(V)$(COMPILER) $(CPP_OPTIM) $(LINK_OPTIONS) $(CPP_PLT) -g -o $@ $(OBJ_FILES) $(DEP_LINK_OPTIONS) $(LINK_EXTRA_LIBS)
+	$(V)$(COMPILER) $(CPP_OPTIM) $(LINK_OPTIONS) $(CPP_PLT) $(LINK_COVERAGE) -g -o $@ $(OBJ_FILES) $(DEP_LINK_OPTIONS) $(LINK_EXTRA_LIBS)
 endif
 ifneq ($(PRJ_POSTBUILD_TARGET),)
 	$(REMAKE) $(PRJ_POSTBUILD_TARGET)
@@ -243,7 +256,7 @@ $(DEPVARS): Makefile
 endif
 
 fake-prjinfo-header $(PRJ_INFO_HEADER): Makefile
-	$(V)echo "  generating $@"
+	$(V)echo "  [$(BUILD_MODE)] created $@"
 	$(V)mkdir -p $(@D)
 	$(V)echo "#pragma once" > $@
 	$(V)echo "#ifndef DECLARE_$(PRJ_NAME)_PrjInfo_h" >> $@
@@ -310,7 +323,7 @@ $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): TEST_SPECIFIC_LINK   = $(Test$(*F)_EXTRA_
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT): $(Test$*_EXTRA_DEPENDENCY)
 	$(V)mkdir -p $(@D)
 	$(V)echo "  linking $@"
-	$(V)$(COMPILER) $(CPP_OPTIM) $(CPP_PLT) -g -o $@  $< $(TEST_OBJ_EXTRA_FILES) $(LINK_MY_LIB) $(DEP_LINK_OPTIONS) $(LINK_EXTRA_LIBS) $(TEST_EXTRA_LINK_LIBS) $(TEST_SPECIFIC_LINK)
+	$(V)$(COMPILER) $(CPP_OPTIM) $(CPP_PLT) -g -o $@  $< $(TEST_OBJ_EXTRA_FILES) $(LINK_MY_LIB) $(DEP_LINK_OPTIONS) $(LINK_COVERAGE) $(LINK_EXTRA_LIBS) $(TEST_EXTRA_LINK_LIBS) $(TEST_SPECIFIC_LINK)
 
 $(BINDIR)/$(TESTDIR)/Test%.$(TESTIND): $(BINDIR)/$(TESTDIR)/Test%.$(TESTEXT)
 	$(V)echo; echo; str="########################### testing $* ###########################"; if test -t 1; then printf "\e[36;1m$$str\e[0m\n"; else echo "$$str"; fi
@@ -398,6 +411,17 @@ check: $(TEST_INDICATORS)
 recheck: clean-test-indicators
 	$(REMAKE) check
 
+LCOVDIR  := build/coverage/$(BUILD_MODE)
+LCOVHTML := $(LCOVDIR)/index.html
+lcov: $(LCOVHTML)
+
+$(LCOVHTML): $(TEST_INDICATORS)
+	$(V)mkdir -p $(@D)
+	$(V)lcov --capture --directory . --output-file $(LCOVDIR)/lcov.info --no-external 2>&1 | xargs -i echo "  [lcov]    {}"
+	$(V)genhtml $(LCOVDIR)/lcov.info --demangle-cpp --output-directory $(LCOVDIR)    2>&1  | xargs -i echo "  [genhtml] {}"
+	$(V)echo
+	$(V)echo "  You can open now file://$$(readlink -e $@)"
+
 ####################### cleaning #########################
 
 clean-test-indicators:
@@ -408,6 +432,9 @@ clean-tests::
 
 clean-test-%:
 	$(V)rm -f $(OBJDIR)/$(TESTDIR)/Test$*.$(OBJEXT) $(BINDIR)/$(TESTDIR)/Test$*.$(TESTEXT)
+
+clean-lcov:
+	$(V)rm -rf $(LCOVDIR)
 
 clean::
 	$(V)rm -rf $(BUILDDIR) $(PRJ_INFO_HEADER)
