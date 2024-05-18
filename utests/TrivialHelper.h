@@ -75,6 +75,22 @@ constexpr const char * const TTY_RESET = "\e[0m";
     }\
 }
 
+#define HIGHLIGHT_FG( FG, TITLE )\
+{\
+    LogGuard g__;\
+    std::cout << "\n" FG " --- " << #TITLE << " ---" << TTY_RESET << std::endl;\
+}
+
+#define HIGHLIGHT_RED(     TITLE ) HIGHLIGHT_FG( "\e[91;1m", TITLE )
+#define HIGHLIGHT_GREEN(   TITLE ) HIGHLIGHT_FG( "\e[92;1m", TITLE )
+#define HIGHLIGHT_YELLOW(  TITLE ) HIGHLIGHT_FG( "\e[93;1m", TITLE )
+#define HIGHLIGHT_BLUE(    TITLE ) HIGHLIGHT_FG( "\e[94;1m", TITLE )
+#define HIGHLIGHT_MAGENTA( TITLE ) HIGHLIGHT_FG( "\e[95;1m", TITLE )
+#define HIGHLIGHT_CYAN(    TITLE ) HIGHLIGHT_FG( "\e[96;1m", TITLE )
+#define HIGHLIGHT_WHITE(   TITLE ) HIGHLIGHT_FG( "\e[97;1m", TITLE )
+#define HIGHLIGHT(         TITLE ) HIGHLIGHT_YELLOW( TITLE )
+
+// red, yellow and green are reserved for error, warning and success
 constexpr std::array< const char * const, 4 > TTY_FGS =
 {
     "\e[94m",
