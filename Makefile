@@ -45,18 +45,19 @@ DEPDIR := $(BUILDDIR)/dep/$(BUILD_MODE)
 LIBDIR := $(BUILDDIR)/lib/$(BUILD_MODE)
 BINDIR := $(BUILDDIR)/bin/$(BUILD_MODE)
 
-CPP_FILES := $(wildcard $(SRCDIR)/$(PRJ_NAME)/*.$(CPPEXT)) $(GENERATED_CPP_FILES)
+PRJSRCDIR := $(SRCDIR)/$(PRJ_NAME)
+CPP_FILES := $(wildcard $(PRJSRCDIR)/*.$(CPPEXT)) $(GENERATED_CPP_FILES)
 ifneq ($(SRCSUBDIRS),)
-    CPP_FILES := $(CPP_FILES) $(foreach dir,$(SRCSUBDIRS),$(wildcard $(SRCDIR)/$(PRJ_NAME)/$(dir)/*.$(CPPEXT)))
+    CPP_FILES := $(CPP_FILES) $(foreach dir,$(SRCSUBDIRS),$(wildcard $(PRJSRCDIR)/$(dir)/*.$(CPPEXT)))
 endif
 
-CPP_HEADERS := $(foreach e,h hpp hxx hh,$(wildcard $(SRCDIR)/$(PRJ_NAME)/*.$e))
+CPP_HEADERS := $(foreach e,h hpp hxx hh,$(wildcard $(PRJSRCDIR)/*.$e))
 ifneq ($(SRCSUBDIRS),)
-    CPP_HEADERS := $(CPP_HEADERS) $(foreach dir,$(SRCSUBDIRS),$(foreach e,h hpp hxx hh,$(wildcard $(SRCDIR)/$(PRJ_NAME)/$(dir)/*.$e)))
+    CPP_HEADERS := $(CPP_HEADERS) $(foreach dir,$(SRCSUBDIRS),$(foreach e,h hpp hxx hh,$(wildcard $(PRJSRCDIR)/$(dir)/*.$e)))
 endif
 
 ifneq ($(PRJ_INFO),)
-    PRJ_INFO_HEADER   = $(shell if ( test ! -f $(SRCDIR)/$(PRJ_NAME)/$(PRJ_INFO) ) || grep -q $(MAKEFILE_UUID) $(SRCDIR)/$(PRJ_NAME)/$(PRJ_INFO); then echo $(SRCDIR)/$(PRJ_NAME)/$(PRJ_INFO); fi)
+    PRJ_INFO_HEADER   = $(shell if ( test ! -f $(PRJSRCDIR)/$(PRJ_INFO) ) || grep -q $(MAKEFILE_UUID) $(PRJSRCDIR)/$(PRJ_INFO); then echo $(PRJSRCDIR)/$(PRJ_INFO); fi)
     PREBUILD_TARGETS += $(PRJ_INFO_HEADER)
 endif
 
@@ -366,11 +367,28 @@ find-makefile-dir-uuid:
 	fi;\
 	done
 
+help:
+	$(V)cat $(THIS_MAKEFILE_DIR)/README.md | sed 's/^##\(.*\)/\x1b[93;1m##\1\x1b[0m/g' | less -r
+
+####################### generators #########################
+
 generate-vscode:
 	$(V)$(THIS_MAKEFILE_DIR)/generate-vscode.sh $(CURDIR) $(DEP_DIRS)
 
-help:
-	$(V)cat $(THIS_MAKEFILE_DIR)/README.md | sed 's/^##\(.*\)/\x1b[93;1m##\1\x1b[0m/g' | less -r
+new-class: NEW_FILES = $(wildcard $(PRJSRCDIR)/$(CLASS).h $(PRJSRCDIR)/$(CLASS).cpp)
+new-class:
+	$(V)if test x = "x$(CLASS)"; then \
+		echo "usage: make $@ CLASS=NewClassName"; \
+		false; \
+	fi
+	$(V)if test x != "x$(NEW_FILES)"; then \
+		echo "file already exist: $(NEW_FILES)"; \
+		false; \
+	fi
+	$(V)set -e; for ext in h cpp; do\
+	  echo "  creating $(THIS_MAKEFILE_DIR)/templates/NewClass.$$ext -> $(PRJSRCDIR)/$(CLASS).$$ext";\
+	  cat $(THIS_MAKEFILE_DIR)/templates/NewClass.$$ext | sed -e "s/NAMESPACE/$(PRJ_NAME)/g" -e "s/CLASS/$(CLASS)/g" > $(PRJSRCDIR)/$(CLASS).$$ext;\
+	done
 
 ####################### launching #########################
 
