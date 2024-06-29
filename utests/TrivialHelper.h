@@ -37,7 +37,7 @@ struct LogGuard
 
 constexpr const char * const TTY_RESET = "\e[0m";
 
-#define CHECK_PREFIXED( PREFIX, TITLE, EXPR, CONDITION ) {\
+#define CHECK_PREFIXED( PREFIX, TITLE, EXPR, CONDITION, VERBOSE ) {\
     try { \
         const auto & check_res_ = EXPR;\
         bool check_isGood_ = check_res_ CONDITION;\
@@ -45,7 +45,7 @@ constexpr const char * const TTY_RESET = "\e[0m";
             LogGuard g__;\
             if( not check_isGood_ )\
                 std::cerr << "\e[33;1m" << __FILE__ << ":" << __LINE__ << TTY_RESET << ": \e[1m" << #TITLE << " : " << "\e[35m<\e[31;1m" << std::boolalpha << check_res_ << "\e[35m>" << TTY_RESET << std::endl;\
-            else \
+            else if( VERBOSE ) \
                 std::cout << PREFIX << std::setw(4) << __LINE__ << ": \e[1m" << #TITLE << " : " << "\e[34m<\e[32;1m" << std::boolalpha << check_res_ << "\e[34m>" << TTY_RESET << std::endl;\
         }\
         CHECK_EXIT\
@@ -56,7 +56,7 @@ constexpr const char * const TTY_RESET = "\e[0m";
     }\
 }
 
-#define CHECK_COMP_PREFIXED( PREFIX, TITLE, OP, EXPR, EXPECTED ) {\
+#define CHECK_COMP_PREFIXED( PREFIX, TITLE, OP, EXPR, EXPECTED, VERBOSE ) {\
     try { \
         const auto & check_res_ = EXPR;\
         bool check_isGood_ = check_res_ OP EXPECTED;\
@@ -64,7 +64,7 @@ constexpr const char * const TTY_RESET = "\e[0m";
             LogGuard g__;\
             if( not check_isGood_ )\
                 std::cerr << "\e[33;1m" << __FILE__ << ":" << __LINE__ << TTY_RESET << ": \e[1m" << #TITLE << " : " << "\e[35m<\e[31;1m" << std::boolalpha << check_res_ << "\e[35m>" << TTY_RESET << " expected <" << EXPECTED << ">" << std::endl;\
-            else \
+            else if( VERBOSE ) \
                 std::cout << PREFIX << std::setw(4) << __LINE__ << ": \e[1m" << #TITLE << " : " << "\e[34m<\e[32;1m" << std::boolalpha << check_res_ << "\e[34m>" << TTY_RESET << std::endl;\
         }\
         CHECK_EXIT\
@@ -99,23 +99,27 @@ constexpr std::array< const char * const, 4 > TTY_FGS =
     "\e[97m"
 };
 
-#define CHECK(                TITLE, EXPR, CONDITION )  CHECK_PREFIXED(         "", TITLE, EXPR, CONDITION )
-#define CHECK_BLUE(           TITLE, EXPR, CONDITION )  CHECK_PREFIXED( TTY_FGS[0], TITLE, EXPR, CONDITION )
-#define CHECK_MAGENTA(        TITLE, EXPR, CONDITION )  CHECK_PREFIXED( TTY_FGS[1], TITLE, EXPR, CONDITION )
-#define CHECK_CYAN(           TITLE, EXPR, CONDITION )  CHECK_PREFIXED( TTY_FGS[2], TITLE, EXPR, CONDITION )
-#define CHECK_WHITE(          TITLE, EXPR, CONDITION )  CHECK_PREFIXED( TTY_FGS[3], TITLE, EXPR, CONDITION )
+#define SILENT_CHECK(          TITLE, EXPR, CONDITION )  CHECK_PREFIXED(              "", TITLE,     EXPR, CONDITION, false )
+#define SILENT_CHECK_EQ(       TITLE, EXPR, EXPECTED  )  CHECK_COMP_PREFIXED(         "", TITLE, ==, EXPR, EXPECTED,  false )
+#define SILENT_CHECK_NOT_EQ(   TITLE, EXPR, EXPECTED  )  CHECK_COMP_PREFIXED(         "", TITLE, !=, EXPR, EXPECTED,  false )
 
-#define CHECK_EQ(             TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED(         "", TITLE, ==, EXPR, EXPECTED )
-#define CHECK_EQ_BLUE(        TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[0], TITLE, ==, EXPR, EXPECTED )
-#define CHECK_EQ_MAGENTA(     TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[1], TITLE, ==, EXPR, EXPECTED )
-#define CHECK_EQ_CYAN(        TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[2], TITLE, ==, EXPR, EXPECTED )
-#define CHECK_EQ_WHITE(       TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[3], TITLE, ==, EXPR, EXPECTED )
+#define CHECK(                TITLE, EXPR, CONDITION )  CHECK_PREFIXED(         "", TITLE, EXPR, CONDITION, true )
+#define CHECK_BLUE(           TITLE, EXPR, CONDITION )  CHECK_PREFIXED( TTY_FGS[0], TITLE, EXPR, CONDITION, true )
+#define CHECK_MAGENTA(        TITLE, EXPR, CONDITION )  CHECK_PREFIXED( TTY_FGS[1], TITLE, EXPR, CONDITION, true )
+#define CHECK_CYAN(           TITLE, EXPR, CONDITION )  CHECK_PREFIXED( TTY_FGS[2], TITLE, EXPR, CONDITION, true )
+#define CHECK_WHITE(          TITLE, EXPR, CONDITION )  CHECK_PREFIXED( TTY_FGS[3], TITLE, EXPR, CONDITION, true )
 
-#define CHECK_NOT_EQ(         TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED(         "", TITLE, !=, EXPR, EXPECTED )
-#define CHECK_NOT_EQ_BLUE(    TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[0], TITLE, !=, EXPR, EXPECTED )
-#define CHECK_NOT_EQ_MAGENTA( TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[1], TITLE, !=, EXPR, EXPECTED )
-#define CHECK_NOT_EQ_CYAN(    TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[2], TITLE, !=, EXPR, EXPECTED )
-#define CHECK_NOT_EQ_WHITE(   TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[3], TITLE, !=, EXPR, EXPECTED )
+#define CHECK_EQ(             TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED(         "", TITLE, ==, EXPR, EXPECTED, true )
+#define CHECK_EQ_BLUE(        TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[0], TITLE, ==, EXPR, EXPECTED, true )
+#define CHECK_EQ_MAGENTA(     TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[1], TITLE, ==, EXPR, EXPECTED, true )
+#define CHECK_EQ_CYAN(        TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[2], TITLE, ==, EXPR, EXPECTED, true )
+#define CHECK_EQ_WHITE(       TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[3], TITLE, ==, EXPR, EXPECTED, true )
+
+#define CHECK_NOT_EQ(         TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED(         "", TITLE, !=, EXPR, EXPECTED, true )
+#define CHECK_NOT_EQ_BLUE(    TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[0], TITLE, !=, EXPR, EXPECTED, true )
+#define CHECK_NOT_EQ_MAGENTA( TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[1], TITLE, !=, EXPR, EXPECTED, true )
+#define CHECK_NOT_EQ_CYAN(    TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[2], TITLE, !=, EXPR, EXPECTED, true )
+#define CHECK_NOT_EQ_WHITE(   TITLE, EXPR, EXPECTED )   CHECK_COMP_PREFIXED( TTY_FGS[3], TITLE, !=, EXPR, EXPECTED, true )
 
 #define STRINGIFY_(X) #X
 #define STRINGIFY(X) STRINGIFY_(X)
