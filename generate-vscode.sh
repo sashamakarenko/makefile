@@ -35,6 +35,14 @@ getPrjUnitTestNames()
     make -s --no-print-directory  show-var-TEST_NAMES -C $1
 }
 
+getExeArgs()
+{
+    local args="$(make -s --no-print-directory show-var-ARGS -C $1)"
+    if [[ -n "$args" ]]; then
+        echo \"$args\"
+    fi
+}
+
 buildDefines()
 {
     local defines="$(make -s --no-print-directory show-var-$2 -C $1 | sed -e 's/^-D//' -e 's/ -D/\n/g' -e 's/\t-D/\n/g' -e 's/"/\"/g' )"
@@ -65,10 +73,11 @@ buildLdPath()
     local ldpath
     for d in $prjdeps; do
         local libtype=$(make -s --no-print-directory  show-var-PRJ_LIB_TYPE -C $d)
-        if [[ x$libtype = xdynamc ]]; then
+        if [[ x$libtype = xdynamic ]]; then
             ldpath="${ldpath}$d/build/lib/$1:"
         fi
     done
+    echo "$ldpath"
 }
 
 #  __   __   __      __   __   __   __   ___  __  ___    ___  __
@@ -286,11 +295,11 @@ EOF_LAUNCH_START
             "type": "cppdbg",
             "request": "launch",
             "program": "\${workspaceFolder}/build/bin/$mode/$prjname",
-            "args": [],
+            "args": [ $(getExeArgs $dir) ],
             "stopAtEntry": false,
             "cwd": "\${workspaceFolder}",
             "environment": [
-                { "name": "LD_LIBRARY_PATH", "value": "${ldpath}$dir/build/lib/$mode:\${env:LD_LIBRARY_PATH}" }
+                { "name": "LD_LIBRARY_PATH", "value": "${ldpath}\${env:LD_LIBRARY_PATH}" }
             ],
             "externalConsole": false,
             "MIMode": "gdb",
