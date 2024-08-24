@@ -12,4 +12,7 @@ CPP_DEFINES  = -DABC   -DAN_INCLUDE="<$(PRJ_NAME)/ExtraInclude.h>" -DTITLE='"Til
 # see includePath in c_cpp_properties.json
 CPP_INCLUDES = -I . -I./src/$(PRJ_NAME) -I"/usr/include"
 
+# for debuging in launch.json
+# ARGS := test
+
 include ../../Makefile

@@ -131,7 +131,7 @@ endif
 ####################### deps #########################
 
 DEP_DIRS :=
-DEPVARS  := $(BUILDDIR)/dependencies.mk
+DEPVARS  := $(BUILDDIR)/dependencies-$(BUILD_MODE).mk
 
 ifneq ($(PRJ_DEPENDENCIES),)
 
