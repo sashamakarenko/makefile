@@ -396,7 +396,7 @@ new-class:
 
 ifeq ($(PRJ_TYPE),exe)
 go: $(TARGET)
-	$(V)export LD_LIBRARY_PATH=$(LD_PATH):$(DEP_LD_LIB_PATH):$$LD_LIBRARY_PATH; ./$< $(ARGS)
+	$(V)export LD_LIBRARY_PATH=$(LD_PATH):$(DEP_LD_LIB_PATH):$$LD_LIBRARY_PATH; $(EXE_RUNNER) ./$< $(ARGS)
 else
 go:
 	$(V)echo "project is not an executable"
