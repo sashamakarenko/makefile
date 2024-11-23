@@ -126,6 +126,10 @@ ifeq ($(PRJ_TYPE),exe)
     TARGET       := $(BINDIR)/$(EXE_NAME)
     LINK_OPTIONS +=
 	PRJ_LIB_TYPE :=
+    SRC_GDB_PRINTER := $(wildcard $(SRCDIR)/gdb/printers.py)
+    ifneq ($(SRC_GDB_PRINTER),)
+        GDB_PRINTER := $(TARGET)-gdb.py
+    endif
 endif
 
 ####################### deps #########################
