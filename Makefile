@@ -277,7 +277,7 @@ fake-prjinfo-header $(PRJ_INFO_HEADER): Makefile
 
 ####################### dependencies #########################
 
-.PHONY: build-deps clean-deps rebuild-all rebuild
+.PHONY: build-deps clean-deps rebuild-all rebuild show-git-status
 
 ifneq ($(DEP_DIRS),)
 
@@ -305,6 +305,9 @@ else
 build-deps clean-deps:
 
 endif
+
+show-git-status:
+	+$(V)for d in . $(DEP_DIRS); do ( cd $$d; echo; if test -t 1; then printf "\e[33;1m$$PWD\e[0m\n"; else echo "$$PWD"; fi; git status ); done
 
 rebuild:
 	$(REMAKE) clean
